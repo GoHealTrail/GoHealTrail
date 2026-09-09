@@ -26,3 +26,13 @@ export interface TripPlan {
   itinerary: Array<{ day: number; trailId: string; notes: string }>
   checklist: string[]
 }
+
+export interface CommunityTrailUpdate {
+  id: string
+  trailId: string
+  category: 'closure' | 'water' | 'condition' | 'leech' | 'mud' | 'other'
+  severity: 'info' | 'warning' | 'danger'
+  message: string
+  reporter: string
+  reportedAt: string
+}

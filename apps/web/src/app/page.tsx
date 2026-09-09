@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from 'react'
-import type { Trail, TripPlan } from '@gohealt/shared-types'
+import { useEffect, useMemo, useState } from 'react'
+import type { CommunityTrailUpdate, Trail, TripPlan } from '@gohealt/shared-types'
 
 type RegionReference = {
   state: string
@@ -77,6 +77,38 @@ const demoAlerts = [
     message: 'Water station at FRIM River Trail checkpoint is open on weekends.',
   },
 ]
+
+const demoCommunityUpdates: CommunityTrailUpdate[] = [
+  {
+    id: 'seed-1',
+    trailId: 't-002',
+    category: 'water',
+    severity: 'warning',
+    message: 'Water flow currently low before sunrise; carry extra water.',
+    reporter: 'Community ranger report',
+    reportedAt: new Date().toISOString(),
+  },
+  {
+    id: 'seed-2',
+    trailId: 't-001',
+    category: 'leech',
+    severity: 'warning',
+    message: 'Leech activity is common in the lower stretch after rain.',
+    reporter: 'Local hiker',
+    reportedAt: new Date().toISOString(),
+  },
+  {
+    id: 'seed-3',
+    trailId: 't-004',
+    category: 'mud',
+    severity: 'warning',
+    message: 'Mud patches reported around the river crossing.',
+    reporter: 'Volunteer check-in',
+    reportedAt: new Date().toISOString(),
+  },
+]
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080'
 
 const kompendiumSnapshot: RegionReference[] = [
   { state: 'Johor', amenityForests: 8, stateParkForests: 0, totalSites: 8 },
@@ -226,6 +258,64 @@ function TrailListItem({
   )
 }
 
+function CommunityUpdatesSection() {
+  const [updates, setUpdates] = useState<CommunityTrailUpdate[]>(demoCommunityUpdates)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCommunityUpdates() {
+      try {
+        const response = await fetch(`${API_BASE}/community-updates`, {
+          cache: 'no-store',
+        })
+        const payload = (await response.json()) as { updates?: CommunityTrailUpdate[] }
+        if (!cancelled && payload.updates?.length) {
+          setUpdates(payload.updates)
+        }
+      } catch {
+        // keep seed fallback
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    loadCommunityUpdates()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return (
+    <section style={{ marginBottom: 24 }}>
+      <h2>Community trail updates</h2>
+      <p style={{ opacity: 0.85 }}>
+        {loading ? 'Loading updates from API...' : `Showing ${updates.length} latest updates`}
+      </p>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {updates.map((entry) => (
+          <li
+            key={entry.id}
+            style={{
+              marginBottom: 8,
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 8,
+              padding: 10,
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>Trail {entry.trailId}</div>
+            <div>{entry.severity.toUpperCase()} · {entry.category}</div>
+            <div>{entry.message}</div>
+            <div style={{ opacity: 0.8 }}>Reported by {entry.reporter}</div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export default function Home() {
   const [stateFilter, setStateFilter] = useState('')
   const [difficultyFilter, setDifficultyFilter] = useState('')
@@ -259,7 +349,6 @@ export default function Home() {
 
   function createPlan() {
     if (typeof window === 'undefined') return
-
     const plan: TripPlan = {
       ...lastPlan,
       title: `${tripName} - ${selectedTrail.name}`,
@@ -368,6 +457,8 @@ export default function Home() {
           </div>
         ))}
       </section>
+
+      <CommunityUpdatesSection />
 
       <section style={{ marginBottom: 24 }}>
         <h2>Safety & permit reminders</h2>

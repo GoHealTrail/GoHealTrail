@@ -15,7 +15,7 @@ The MVP implementation is in seed form with key flows wired in web + API + mobil
 | MVP-04 | Offline trail package / manifest | P0 | API, Web, Mobile | Done | `/offline-manifest` endpoint added; offline-oriented export data exists in UI seed flow. |
 | MVP-05 | Weather and safety alerts | P0 | Web, Mobile, API | Done | Seeded alerts with severity + safety banner/rules are visible in app data model. |
 | MVP-06 | SOS emergency flow | P1 | Mobile, API | Done | `/sos` endpoint returns tracked event object; UI includes emergency trigger flow. |
-| MVP-07 | Community trail updates | P1 | Web, Mobile | In Progress | API seeding is present; persistence/moderation + real-time sharing still pending. |
+| MVP-07 | Community trail updates | P1 | Web, API | In Progress | Added API + DB schema + seed + web reads from `/community-updates`; next: form submit + moderation + mobile parity. |
 
 ## Acceptance criteria status
 

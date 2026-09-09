@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { randomUUID } from 'node:crypto'
 import 'dotenv/config'
+import type { CommunityTrailUpdate } from '@gohealt/shared-types'
 import { supabase } from './lib/supabase.js'
 import { seedDatabase } from './seed.js'
 
@@ -191,6 +192,87 @@ async function bootstrap() {
         longitude: payload.longitude,
       },
       notes: payload.notes ?? 'No extra notes provided',
+    }
+  })
+
+  // GET /community-updates
+  server.get('/community-updates', async () => {
+    const { data, error } = await supabase
+      .from('community_trail_updates')
+      .select('id, trail_id, category, severity, message, reporter, created_at')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw new Error(`Database error: ${error.message}`)
+    }
+
+    const rows = (data || []) as Array<
+      Omit<CommunityTrailUpdate, 'id' | 'reportedAt'> & { id: string; created_at: string; reporter: string }
+    >
+
+    return {
+      updates: rows.map((row) => ({
+        id: row.id,
+        trailId: row.trail_id,
+        category: row.category,
+        severity: row.severity,
+        message: row.message,
+        reporter: row.reporter,
+        reportedAt: row.created_at,
+      })),
+    }
+  })
+
+  // POST /community-updates
+  server.post('/community-updates', async (request, reply) => {
+    const payload = request.body as {
+      trailId?: string
+      category?: CommunityTrailUpdate['category']
+      severity?: CommunityTrailUpdate['severity']
+      message?: string
+      reporter?: string
+    }
+
+    if (
+      !payload?.trailId ||
+      !payload?.category ||
+      !payload?.severity ||
+      !payload?.message ||
+      !payload?.reporter
+    ) {
+      await reply.code(400)
+      return { error: 'Invalid community update payload.' }
+    }
+
+    const nextUpdate = {
+      id: randomUUID(),
+      trail_id: payload.trailId,
+      category: payload.category,
+      severity: payload.severity,
+      message: payload.message,
+      reporter: payload.reporter,
+    }
+
+    const { data, error } = await supabase
+      .from('community_trail_updates')
+      .insert(nextUpdate)
+      .select('id, trail_id, category, severity, message, reporter, created_at')
+      .single()
+
+    if (error) {
+      await reply.code(500)
+      return { error: `Database error: ${error.message}` }
+    }
+
+    await reply.code(201)
+    return {
+      id: data.id,
+      trailId: data.trail_id,
+      category: data.category,
+      severity: data.severity,
+      message: data.message,
+      reporter: data.reporter,
+      reportedAt: data.created_at,
     }
   })
 
