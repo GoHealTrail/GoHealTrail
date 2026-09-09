@@ -32,6 +32,7 @@ export interface CommunityTrailUpdate {
   trailId: string
   category: 'closure' | 'water' | 'condition' | 'leech' | 'mud' | 'other'
   severity: 'info' | 'warning' | 'danger'
+  status: 'pending' | 'approved' | 'rejected'
   message: string
   reporter: string
   reportedAt: string

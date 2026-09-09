@@ -84,6 +84,7 @@ const demoCommunityUpdates: CommunityTrailUpdate[] = [
     trailId: 't-002',
     category: 'water',
     severity: 'warning',
+    status: 'approved',
     message: 'Water flow currently low before sunrise; carry extra water.',
     reporter: 'Community ranger report',
     reportedAt: new Date().toISOString(),
@@ -93,6 +94,7 @@ const demoCommunityUpdates: CommunityTrailUpdate[] = [
     trailId: 't-001',
     category: 'leech',
     severity: 'warning',
+    status: 'approved',
     message: 'Leech activity is common in the lower stretch after rain.',
     reporter: 'Local hiker',
     reportedAt: new Date().toISOString(),
@@ -102,6 +104,7 @@ const demoCommunityUpdates: CommunityTrailUpdate[] = [
     trailId: 't-004',
     category: 'mud',
     severity: 'warning',
+    status: 'approved',
     message: 'Mud patches reported around the river crossing.',
     reporter: 'Volunteer check-in',
     reportedAt: new Date().toISOString(),
@@ -269,6 +272,7 @@ function CommunityUpdatesSection() {
 
   const [category, setCategory] = useState<CommunityTrailUpdate['category']>('condition')
   const [severity, setSeverity] = useState<CommunityTrailUpdate['severity']>('warning')
+  const [filterStatus, setFilterStatus] = useState<'all' | CommunityTrailUpdate['status']>('all')
 
   useEffect(() => {
     let cancelled = false
@@ -385,7 +389,7 @@ function CommunityUpdatesSection() {
         {formError && <p style={{ color: '#ff9a9e' }}>{formError}</p>}
       </form>
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {updates.map((entry) => (
+        {(filterStatus === 'all' ? updates : updates.filter((entry) => entry.status === filterStatus)).map((entry) => (
           <li
             key={entry.id}
             style={{
@@ -396,12 +400,32 @@ function CommunityUpdatesSection() {
             }}
           >
             <div style={{ fontWeight: 700 }}>Trail {entry.trailId}</div>
-            <div>{entry.severity.toUpperCase()} · {entry.category}</div>
+            <div>
+              {entry.severity.toUpperCase()} · {entry.category}{' '}
+              <span
+                style={{
+                  color: entry.status === 'pending' ? '#fbbf24' : entry.status === 'rejected' ? '#f87171' : '#4ade80',
+                  fontWeight: 700,
+                }}
+              >
+                [{entry.status.toUpperCase()}]
+              </span>
+            </div>
             <div>{entry.message}</div>
             <div style={{ opacity: 0.8 }}>Reported by {entry.reporter}</div>
           </li>
         ))}
       </ul>
+      <select
+        style={{ marginTop: 12 }}
+        value={filterStatus}
+        onChange={(event) => setFilterStatus(event.target.value as 'all' | CommunityTrailUpdate['status'])}
+      >
+        <option value="all">All updates</option>
+        <option value="approved">Approved</option>
+        <option value="pending">Pending</option>
+        <option value="rejected">Rejected</option>
+      </select>
     </section>
   )
 }

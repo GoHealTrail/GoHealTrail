@@ -138,6 +138,7 @@ export const communityUpdates: CommunityTrailUpdate[] = [
     trailId: 't-002',
     category: 'water',
     severity: 'warning',
+    status: 'approved',
     message: 'Water flow currently low before sunrise; carry extra water.',
     reporter: 'Community ranger report',
     reportedAt: new Date().toISOString(),
@@ -148,6 +149,7 @@ export const communityUpdates: CommunityTrailUpdate[] = [
     category: 'leech',
     severity: 'warning',
     message: 'Leech activity is common in the lower stretch after rain.',
+    status: 'approved',
     reporter: 'Local hiker',
     reportedAt: new Date().toISOString(),
   },
@@ -160,6 +162,7 @@ export const defaultCommunityUpdatePayload = {
   category: 'other' as const,
   severity: 'info' as const,
   message: 'Community check-in',
+  status: 'pending' as const,
   reporter: 'Mobile',
 }
 
@@ -186,3 +189,39 @@ export const buildCommunityPayload = () => ({
   message: `Update at ${new Date().toISOString()}`,
   trailId: trails[0]?.id ?? 't-001',
 })
+
+const defaultCommunityApiBase = 'http://localhost:8080'
+
+export async function submitCommunityTrailUpdate(
+  payload: Omit<CommunityTrailUpdate, 'id' | 'reportedAt'>,
+  apiBase = defaultCommunityApiBase,
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  if (
+    !payload?.trailId ||
+    !payload?.category ||
+    !payload?.severity ||
+    !payload?.message ||
+    !payload?.reporter
+  ) {
+    return { ok: false, error: 'Invalid community update payload.' }
+  }
+
+  const response = await fetch(`${apiBase}/community-updates`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    return { ok: false, error: body || `Request failed with ${response.status}` }
+  }
+
+  const update = (await response.json()) as CommunityTrailUpdate
+  return { ok: true, update }
+}
+
+
+export const pendingCommunityPayload = buildCommunityPayload

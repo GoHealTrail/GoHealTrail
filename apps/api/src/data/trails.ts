@@ -11,6 +11,7 @@ export interface DemoCommunityUpdate {
   trailId: string
   category: 'closure' | 'water' | 'condition' | 'leech' | 'mud' | 'other'
   severity: 'info' | 'warning' | 'danger'
+  status: 'pending' | 'approved' | 'rejected'
   message: string
   reporter: string
 }
@@ -83,6 +84,7 @@ export const demoCommunityUpdates: DemoCommunityUpdate[] = [
     trailId: 't-002',
     category: 'water',
     severity: 'warning',
+    status: 'approved',
     message: 'Water flow currently low before sunrise; carry enough water.',
     reporter: 'Community ranger report',
   },
@@ -90,6 +92,7 @@ export const demoCommunityUpdates: DemoCommunityUpdate[] = [
     trailId: 't-004',
     category: 'mud',
     severity: 'warning',
+    status: 'approved',
     message: 'Mud patches appeared after recent rain on river crossing section.',
     reporter: 'Volunteer check-in',
   },
@@ -97,6 +100,7 @@ export const demoCommunityUpdates: DemoCommunityUpdate[] = [
     trailId: 't-001',
     category: 'condition',
     severity: 'info',
+    status: 'approved',
     message: 'Trail signs refreshed and one new bench added near rest point.',
     reporter: 'Local guide',
   },
@@ -104,6 +108,7 @@ export const demoCommunityUpdates: DemoCommunityUpdate[] = [
     trailId: 't-005',
     category: 'leech',
     severity: 'warning',
+    status: 'pending',
     message: 'Leech activity reported in lower section after rain.',
     reporter: 'Hiker report',
   },

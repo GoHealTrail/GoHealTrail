@@ -35,6 +35,7 @@ export async function seedDatabase() {
         severity: update.severity,
         message: update.message,
         reporter: update.reporter,
+        status: update.status,
       })),
       { onConflict: 'id' }
     )

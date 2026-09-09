@@ -199,7 +199,7 @@ async function bootstrap() {
   server.get('/community-updates', async () => {
     const { data, error } = await supabase
       .from('community_trail_updates')
-      .select('id, trail_id, category, severity, message, reporter, created_at')
+      .select('id, trail_id, category, severity, message, reporter, status, created_at')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -207,7 +207,7 @@ async function bootstrap() {
     }
 
     const rows = (data || []) as Array<
-      Omit<CommunityTrailUpdate, 'id' | 'reportedAt'> & { id: string; created_at: string; reporter: string }
+      Omit<CommunityTrailUpdate, 'id' | 'reportedAt'> & { id: string; created_at: string; reporter: string; status: 'pending' | 'approved' | 'rejected' }
     >
 
     return {
@@ -218,8 +218,106 @@ async function bootstrap() {
         severity: row.severity,
         message: row.message,
         reporter: row.reporter,
+        status: row.status,
         reportedAt: row.created_at,
       })),
+    }
+  })
+
+
+  // GET /community-updates/pending
+  server.get('/community-updates/pending', async () => {
+    const { data, error } = await supabase
+      .from('community_trail_updates')
+      .select('id, trail_id, category, severity, message, reporter, status, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw new Error(`Database error: ${error.message}`)
+    }
+
+    const rows = (data || []) as Array<
+      Omit<CommunityTrailUpdate, 'id' | 'reportedAt'> & { id: string; created_at: string; reporter: string; status: 'pending' | 'approved' | 'rejected' }
+    >
+
+    return {
+      updates: rows.map((row) => ({
+        id: row.id,
+        trailId: row.trail_id,
+        category: row.category,
+        severity: row.severity,
+        message: row.message,
+        reporter: row.reporter,
+        status: row.status,
+        reportedAt: row.created_at,
+      })),
+    }
+  })
+
+  // POST /community-updates/:id/approve
+  server.post('/community-updates/:id/approve', async (request, reply) => {
+    const { id } = request.params as { id: string }
+
+    const { data, error } = await supabase
+      .from('community_trail_updates')
+      .update({ status: 'approved' })
+      .eq('id', id)
+      .select('id, trail_id, category, severity, message, reporter, status, created_at')
+      .single()
+
+    if (error) {
+      await reply.code(500)
+      return { error: `Database error: ${error.message}` }
+    }
+
+    if (!data) {
+      await reply.code(404)
+      return { error: 'Update not found' }
+    }
+
+    return {
+      id: data.id,
+      trailId: data.trail_id,
+      category: data.category,
+      severity: data.severity,
+      message: data.message,
+      reporter: data.reporter,
+      status: data.status,
+      reportedAt: data.created_at,
+    }
+  })
+
+  // POST /community-updates/:id/reject
+  server.post('/community-updates/:id/reject', async (request, reply) => {
+    const { id } = request.params as { id: string }
+
+    const { data, error } = await supabase
+      .from('community_trail_updates')
+      .update({ status: 'rejected' })
+      .eq('id', id)
+      .select('id, trail_id, category, severity, message, reporter, status, created_at')
+      .single()
+
+    if (error) {
+      await reply.code(500)
+      return { error: `Database error: ${error.message}` }
+    }
+
+    if (!data) {
+      await reply.code(404)
+      return { error: 'Update not found' }
+    }
+
+    return {
+      id: data.id,
+      trailId: data.trail_id,
+      category: data.category,
+      severity: data.severity,
+      message: data.message,
+      reporter: data.reporter,
+      status: data.status,
+      reportedAt: data.created_at,
     }
   })
 
@@ -256,7 +354,7 @@ async function bootstrap() {
     const { data, error } = await supabase
       .from('community_trail_updates')
       .insert(nextUpdate)
-      .select('id, trail_id, category, severity, message, reporter, created_at')
+      .select('id, trail_id, category, severity, message, reporter, status, created_at')
       .single()
 
     if (error) {
@@ -272,6 +370,7 @@ async function bootstrap() {
       severity: data.severity,
       message: data.message,
       reporter: data.reporter,
+      status: data.status,
       reportedAt: data.created_at,
     }
   })

@@ -44,6 +44,9 @@ CREATE TABLE IF NOT EXISTS community_trail_updates (
   severity TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'danger')),
   message TEXT NOT NULL,
   reporter TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (
+    status IN ('pending', 'approved', 'rejected')
+  ),
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
