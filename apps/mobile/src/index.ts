@@ -1,4 +1,4 @@
-import type { Trail, TripPlan } from '@gohealt/shared-types'
+import type { Trail, TripPlan, CommunityTrailUpdate } from '@gohealt/shared-types'
 
 type RegionReference = {
   state: string
@@ -132,7 +132,36 @@ export const alerts = [
   },
 ]
 
+export const communityUpdates: CommunityTrailUpdate[] = [
+  {
+    id: '1',
+    trailId: 't-002',
+    category: 'water',
+    severity: 'warning',
+    message: 'Water flow currently low before sunrise; carry extra water.',
+    reporter: 'Community ranger report',
+    reportedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    trailId: 't-001',
+    category: 'leech',
+    severity: 'warning',
+    message: 'Leech activity is common in the lower stretch after rain.',
+    reporter: 'Local hiker',
+    reportedAt: new Date().toISOString(),
+  },
+]
+
 export const starterChecklist = ['Water', 'Food', 'Torch', 'Rain jacket', 'First aid kit']
+
+export const defaultCommunityUpdatePayload = {
+  trailId: 't-002',
+  category: 'other' as const,
+  severity: 'info' as const,
+  message: 'Community check-in',
+  reporter: 'Mobile',
+}
 
 export function buildPlan(title: string, userId: string, selectedTrailId: string): TripPlan {
   return {
@@ -151,3 +180,9 @@ export function buildPlan(title: string, userId: string, selectedTrailId: string
     checklist: [...starterChecklist],
   }
 }
+
+export const buildCommunityPayload = () => ({
+  ...defaultCommunityUpdatePayload,
+  message: `Update at ${new Date().toISOString()}`,
+  trailId: trails[0]?.id ?? 't-001',
+})

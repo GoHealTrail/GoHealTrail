@@ -261,6 +261,14 @@ function TrailListItem({
 function CommunityUpdatesSection() {
   const [updates, setUpdates] = useState<CommunityTrailUpdate[]>(demoCommunityUpdates)
   const [loading, setLoading] = useState(true)
+  const [formError, setFormError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
+  const [reporter, setReporter] = useState('')
+  const [selectedTrailId, setSelectedTrailId] = useState(demoTrails[0]?.id ?? '')
+
+  const [category, setCategory] = useState<CommunityTrailUpdate['category']>('condition')
+  const [severity, setSeverity] = useState<CommunityTrailUpdate['severity']>('warning')
 
   useEffect(() => {
     let cancelled = false
@@ -288,12 +296,94 @@ function CommunityUpdatesSection() {
     }
   }, [])
 
+  async function submitCommunityUpdate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setFormError('')
+
+    const trimmedMessage = message.trim()
+    const trimmedReporter = reporter.trim()
+
+    if (!trimmedMessage || !trimmedReporter || !selectedTrailId) {
+      setFormError('Trail, message, and reporter are required.')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`${API_BASE}/community-updates`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          trailId: selectedTrailId,
+          category,
+          severity,
+          message: trimmedMessage,
+          reporter: trimmedReporter,
+        }),
+      })
+
+      if (!response.ok) {
+        const body = await response.text()
+        throw new Error(body || `Request failed with ${response.status}`)
+      }
+
+      const created = (await response.json()) as CommunityTrailUpdate
+      setUpdates((current) => [created, ...current])
+      setMessage('')
+      setReporter('')
+    } catch (error) {
+      setFormError((error as Error).message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section style={{ marginBottom: 24 }}>
       <h2>Community trail updates</h2>
       <p style={{ opacity: 0.85 }}>
         {loading ? 'Loading updates from API...' : `Showing ${updates.length} latest updates`}
       </p>
+      <form onSubmit={submitCommunityUpdate} style={{ marginBottom: 16, display: 'grid', gap: 8 }}>
+        <select value={selectedTrailId} onChange={(event) => setSelectedTrailId(event.target.value)}>
+          {demoTrails.map((trail) => (
+            <option key={trail.id} value={trail.id}>
+              {trail.name}
+            </option>
+          ))}
+        </select>
+        <select value={category} onChange={(event) => setCategory(event.target.value as CommunityTrailUpdate['category'])}>
+          <option value="closure">closure</option>
+          <option value="water">water</option>
+          <option value="condition">condition</option>
+          <option value="leech">leech</option>
+          <option value="mud">mud</option>
+          <option value="other">other</option>
+        </select>
+        <select value={severity} onChange={(event) => setSeverity(event.target.value as CommunityTrailUpdate['severity'])}>
+          <option value="info">info</option>
+          <option value="warning">warning</option>
+          <option value="danger">danger</option>
+        </select>
+        <input
+          value={reporter}
+          onChange={(event) => setReporter(event.target.value)}
+          placeholder="Reporter name"
+        />
+        <textarea
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder="Describe what you observed"
+          rows={3}
+        />
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit community update'}
+        </button>
+        {formError && <p style={{ color: '#ff9a9e' }}>{formError}</p>}
+      </form>
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {updates.map((entry) => (
           <li
