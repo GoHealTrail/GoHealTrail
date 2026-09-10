@@ -190,7 +190,7 @@ export const buildCommunityPayload = () => ({
   trailId: trails[0]?.id ?? 't-001',
 })
 
-const defaultCommunityApiBase = 'http://localhost:8080'
+export const defaultCommunityApiBase = 'http://localhost:8080'
 
 export async function submitCommunityTrailUpdate(
   payload: Omit<CommunityTrailUpdate, 'id' | 'reportedAt'>,
@@ -223,5 +223,47 @@ export async function submitCommunityTrailUpdate(
   return { ok: true, update }
 }
 
+export async function moderateCommunityTrailUpdate(
+  id: string,
+  action: 'approve' | 'reject',
+  apiBase = defaultCommunityApiBase,
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  if (!id) {
+    return { ok: false, error: 'Invalid community update id.' }
+  }
+
+  if (action !== 'approve' && action !== 'reject') {
+    return { ok: false, error: 'Invalid moderation action.' }
+  }
+
+  const response = await fetch(`${apiBase}/community-updates/${id}/${action}`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    return { ok: false, error: body || `Request failed with ${response.status}` }
+  }
+
+  const update = (await response.json()) as CommunityTrailUpdate
+  return { ok: true, update }
+}
+
+export async function approveCommunityTrailUpdate(
+  id: string,
+  apiBase = defaultCommunityApiBase,
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  return moderateCommunityTrailUpdate(id, 'approve', apiBase)
+}
+
+export async function rejectCommunityTrailUpdate(
+  id: string,
+  apiBase = defaultCommunityApiBase,
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  return moderateCommunityTrailUpdate(id, 'reject', apiBase)
+}
 
 export const pendingCommunityPayload = buildCommunityPayload

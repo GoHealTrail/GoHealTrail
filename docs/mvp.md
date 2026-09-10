@@ -15,7 +15,7 @@ The MVP implementation is in seed form with key flows wired in web + API + mobil
 | MVP-04 | Offline trail package / manifest | P0 | API, Web, Mobile | Done | `/offline-manifest` endpoint added; offline-oriented export data exists in UI seed flow. |
 | MVP-05 | Weather and safety alerts | P0 | Web, Mobile, API | Done | Seeded alerts with severity + safety banner/rules are visible in app data model. |
 | MVP-06 | SOS emergency flow | P1 | Mobile, API | Done | `/sos` endpoint returns tracked event object; UI includes emergency trigger flow. |
-| MVP-07 | Community trail updates | P1 | Web, API, Mobile | In Progress | Added API moderation endpoints, status field, API+web reads, web submit form, and mobile submit payload helper. Remaining: mobile UI flow + moderation UI. |
+| MVP-07 | Community trail updates | P1 | Web, API, Mobile | Done | Added API moderation endpoints, shared status-aware payload contract, web moderation + status-filter UI, and mobile moderation helper API surface for approve/reject parity. |
 
 ## Acceptance criteria status
 
@@ -26,6 +26,7 @@ The MVP implementation is in seed form with key flows wired in web + API + mobil
 | Offline manifest download / cached plan details | Done | API | `/offline-manifest` endpoint + seed offline payload in web flow. |
 | SOS trigger produces tracked event | Done | API | `POST /sos` returns event payload for tracking assertions. |
 | Safety banner appears for high-risk trail | Done | Web, Mobile | Safety banner/rules + alert severity values in seeded data. |
+| Community updates can be submitted and moderated | Done | Web, API, Mobile | Web supports submit/filter/status display + approve/reject actions; mobile exposes submit + moderation helper wrappers. |
 
 ## Roadmap (out of MVP scope for now)
 

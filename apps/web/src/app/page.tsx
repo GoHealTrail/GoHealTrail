@@ -265,7 +265,9 @@ function CommunityUpdatesSection() {
   const [updates, setUpdates] = useState<CommunityTrailUpdate[]>(demoCommunityUpdates)
   const [loading, setLoading] = useState(true)
   const [formError, setFormError] = useState('')
+  const [actionError, setActionError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [processingIds, setProcessingIds] = useState<string[]>([])
   const [message, setMessage] = useState('')
   const [reporter, setReporter] = useState('')
   const [selectedTrailId, setSelectedTrailId] = useState(demoTrails[0]?.id ?? '')
@@ -273,6 +275,8 @@ function CommunityUpdatesSection() {
   const [category, setCategory] = useState<CommunityTrailUpdate['category']>('condition')
   const [severity, setSeverity] = useState<CommunityTrailUpdate['severity']>('warning')
   const [filterStatus, setFilterStatus] = useState<'all' | CommunityTrailUpdate['status']>('all')
+
+  const isModerating = processingIds.length > 0
 
   useEffect(() => {
     let cancelled = false
@@ -345,6 +349,31 @@ function CommunityUpdatesSection() {
     }
   }
 
+  async function moderateUpdate(id: string, action: 'approve' | 'reject') {
+    if (!id || processingIds.includes(id)) return
+
+    setActionError('')
+    setProcessingIds((current) => [...current, id])
+
+    try {
+      const response = await fetch(`${API_BASE}/community-updates/${id}/${action}`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const body = await response.text()
+        throw new Error(body || `Request failed with ${response.status}`)
+      }
+
+      const updated = (await response.json()) as CommunityTrailUpdate
+      setUpdates((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+    } catch (error) {
+      setActionError((error as Error).message)
+    } finally {
+      setProcessingIds((current) => current.filter((itemId) => itemId !== id))
+    }
+  }
+
   return (
     <section style={{ marginBottom: 24 }}>
       <h2>Community trail updates</h2>
@@ -387,9 +416,10 @@ function CommunityUpdatesSection() {
           {isSubmitting ? 'Submitting...' : 'Submit community update'}
         </button>
         {formError && <p style={{ color: '#ff9a9e' }}>{formError}</p>}
-      </form>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {(filterStatus === 'all' ? updates : updates.filter((entry) => entry.status === filterStatus)).map((entry) => (
+          {actionError && <p style={{ color: '#fca5a5' }}>{actionError}</p>}
+        </form>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {(filterStatus === 'all' ? updates : updates.filter((entry) => entry.status === filterStatus)).map((entry) => (
           <li
             key={entry.id}
             style={{
@@ -413,6 +443,24 @@ function CommunityUpdatesSection() {
             </div>
             <div>{entry.message}</div>
             <div style={{ opacity: 0.8 }}>Reported by {entry.reporter}</div>
+            {entry.status === 'pending' && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button
+                  type="button"
+                  disabled={processingIds.includes(entry.id) || isModerating}
+                  onClick={() => moderateUpdate(entry.id, 'approve')}
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  disabled={processingIds.includes(entry.id) || isModerating}
+                  onClick={() => moderateUpdate(entry.id, 'reject')}
+                >
+                  Reject
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
