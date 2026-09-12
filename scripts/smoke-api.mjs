@@ -136,6 +136,10 @@ function startApiServer(repoRoot, env) {
       cwd: repoRoot,
       env,
       stdio: ['ignore', 'pipe', 'pipe'],
+      // Node's CVE-2024-27980 fix makes spawn() throw EINVAL on Windows when the
+      // target is a .cmd/.bat without a shell. Args here are static, so there is
+      // no interpolation surface for the shell to reinterpret.
+      shell: process.platform === 'win32',
     }
   )
 
