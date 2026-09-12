@@ -6,6 +6,19 @@ import type { CommunityTrailUpdate } from '@gohealt/shared-types'
 import { supabase } from './lib/supabase.js'
 import { seedDatabase } from './seed.js'
 
+// Raw shape returned by Supabase select() on community_trail_updates.
+// Columns are snake_case; the handlers map them to the camelCase API shape.
+type CommunityUpdateRow = {
+  id: string
+  trail_id: string
+  category: CommunityTrailUpdate['category']
+  severity: CommunityTrailUpdate['severity']
+  message: string
+  reporter: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+}
+
 const server = Fastify({ logger: true })
 
 async function bootstrap() {
@@ -206,9 +219,7 @@ async function bootstrap() {
       throw new Error(`Database error: ${error.message}`)
     }
 
-    const rows = (data || []) as Array<
-      Omit<CommunityTrailUpdate, 'id' | 'reportedAt'> & { id: string; created_at: string; reporter: string; status: 'pending' | 'approved' | 'rejected' }
-    >
+    const rows = (data || []) as CommunityUpdateRow[]
 
     return {
       updates: rows.map((row) => ({
@@ -237,9 +248,7 @@ async function bootstrap() {
       throw new Error(`Database error: ${error.message}`)
     }
 
-    const rows = (data || []) as Array<
-      Omit<CommunityTrailUpdate, 'id' | 'reportedAt'> & { id: string; created_at: string; reporter: string; status: 'pending' | 'approved' | 'rejected' }
-    >
+    const rows = (data || []) as CommunityUpdateRow[]
 
     return {
       updates: rows.map((row) => ({
