@@ -1,10 +1,13 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { randomUUID } from 'node:crypto'
+
 import 'dotenv/config'
 import type { CommunityTrailUpdate } from '@gohealt/shared-types'
 import { supabase } from './lib/supabase.js'
 import { seedDatabase } from './seed.js'
+import { requireAuthenticatedUser } from './auth.js'
+import { registerPlanRoutes } from './plan-routes.js'
 
 // Raw shape returned by Supabase select() on community_trail_updates.
 // Columns are snake_case; the handlers map them to the camelCase API shape.
@@ -107,64 +110,8 @@ async function bootstrap() {
     }
   })
 
-  // GET /plans
-  server.get('/plans', async (request) => {
-    const userId = (request.query as { userId?: string }).userId
-    let query = supabase.from('trip_plans').select('*')
-    if (userId) query = query.eq('user_id', userId)
+  registerPlanRoutes(server, supabase, requireAuthenticatedUser)
 
-    const { data, error } = await query
-    if (error) {
-      throw new Error(`Database error: ${error.message}`)
-    }
-
-    return { plans: data || [] }
-  })
-
-  // POST /plans
-  server.post('/plans', async (request, reply) => {
-    const payload = request.body as {
-      title?: string
-      userId?: string
-      startDate?: string
-      endDate?: string
-      itinerary?: Array<{ day: number; trailId: string; notes: string }>
-      checklist?: string[]
-    }
-
-    const missing =
-      !payload?.title ||
-      !payload?.userId ||
-      !payload?.startDate ||
-      !payload?.endDate ||
-      !Array.isArray(payload.itinerary) ||
-      !Array.isArray(payload.checklist)
-
-    if (missing) {
-      await reply.code(400)
-      return { error: 'Invalid plan payload' }
-    }
-
-    const plan = {
-      id: randomUUID(),
-      title: payload.title,
-      user_id: payload.userId,
-      start_date: payload.startDate,
-      end_date: payload.endDate,
-      itinerary: payload.itinerary,
-      checklist: payload.checklist,
-    }
-
-    const { data, error } = await supabase.from('trip_plans').insert(plan).select().single()
-
-    if (error) {
-      await reply.code(500)
-      return { error: `Database error: ${error.message}` }
-    }
-
-    await reply.code(201)
-    return data
-  })
 
   // GET /offline-manifest
   server.get('/offline-manifest', async () => {
@@ -182,23 +129,26 @@ async function bootstrap() {
 
   // POST /sos
   server.post('/sos', async (request, reply) => {
+    const user = await requireAuthenticatedUser(request, reply)
+    if (!user) return
+
     const payload = request.body as {
-      userId?: string
       latitude?: number
       longitude?: number
       contacts?: string[]
       notes?: string
     }
 
-    if (!payload?.userId || typeof payload.latitude !== 'number' || typeof payload.longitude !== 'number') {
+    if (typeof payload.latitude !== 'number' || typeof payload.longitude !== 'number') {
       await reply.code(400)
-      return { error: 'Invalid SOS payload. userId and numeric latitude/longitude required.' }
+      return { error: 'Invalid SOS payload. Numeric latitude/longitude required.' }
     }
 
     const eventId = randomUUID()
 
     return {
       eventId,
+      userId: user.id,
       status: 'accepted',
       sharedLocation: {
         latitude: payload.latitude,
@@ -332,6 +282,9 @@ async function bootstrap() {
 
   // POST /community-updates
   server.post('/community-updates', async (request, reply) => {
+    const user = await requireAuthenticatedUser(request, reply)
+    if (!user) return
+
     const payload = request.body as {
       trailId?: string
       category?: CommunityTrailUpdate['category']
@@ -357,7 +310,7 @@ async function bootstrap() {
       category: payload.category,
       severity: payload.severity,
       message: payload.message,
-      reporter: payload.reporter,
+      reporter: user.id,
     }
 
     const { data, error } = await supabase
