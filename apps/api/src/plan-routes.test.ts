@@ -25,7 +25,7 @@ test('returns only the authenticated user plans', async () => {
     },
   } as never
   const server = Fastify()
-  registerPlanRoutes(server, db, async () => ({ id: 'user-1' }))
+  registerPlanRoutes(server, db, async () => ({ id: 'user-1', role: 'user' }))
   await server.ready()
 
   const response = await server.inject({
@@ -40,7 +40,7 @@ test('returns only the authenticated user plans', async () => {
 
 test('rejects access to another user plans', async () => {
   const server = Fastify()
-  registerPlanRoutes(server, { from: () => queryResult([]) } as never, async () => ({ id: 'user-1' }))
+  registerPlanRoutes(server, { from: () => queryResult([]) } as never, async () => ({ id: 'user-1', role: 'user' }))
   await server.ready()
 
   const response = await server.inject({
@@ -72,7 +72,7 @@ test('creates a plan owned by the authenticated user', async () => {
     }),
   } as never
   const server = Fastify()
-  registerPlanRoutes(server, db, async () => ({ id: 'user-1' }))
+  registerPlanRoutes(server, db, async () => ({ id: 'user-1', role: 'user' }))
   await server.ready()
 
   const response = await server.inject({

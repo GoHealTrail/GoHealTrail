@@ -10,8 +10,9 @@ function result(data: unknown, error: unknown = null) {
     eq: () => chain,
     select: () => chain,
     single: async () => ({ data, error }),
-    then: (resolve: (value: { data: unknown; error: unknown }) => unknown) =>
-      Promise.resolve({ data, error }).then(resolve),
+    /* eslint-disable no-unused-vars -- thenable test-double contract. */
+    then: (resolve: (value: { data: unknown; error: unknown }) => unknown) => Promise.resolve({ data, error }).then(resolve),
+    /* eslint-enable no-unused-vars */
   }
   return chain
 }
@@ -24,16 +25,14 @@ function moderationDb(data: unknown) {
   return {
     from: () => ({
       update: () => ({
-        eq: () => {
-          const chain = {
-            select: () => chain,
+        eq: () => ({
+          select: () => ({
             single: async () => ({ data, error: null }),
-            then: (resolve: (value: { data: unknown; error: null }) => unknown) =>
-              Promise.resolve({ data, error: null }).then(resolve),
-            catch: (reject: (error: unknown) => unknown) => Promise.reject(reject),
-          }
-          return chain
-        },
+            /* eslint-disable no-unused-vars -- thenable test-double contract. */
+            then: (resolve: (value: { data: unknown; error: null }) => unknown) => Promise.resolve({ data, error: null }).then(resolve),
+            /* eslint-enable no-unused-vars */
+          }),
+        }),
       }),
     }),
   } as never
@@ -41,46 +40,31 @@ function moderationDb(data: unknown) {
 
 test('creates a community update with the authenticated reporter', async () => {
   const server = Fastify()
-  registerCommunityRoutes(
-    server,
-    dbFor({
-      id: 'update-1', trail_id: 'trail-1', category: 'condition', severity: 'warning',
-      message: 'Slippery rocks', reporter: 'user-1', status: 'pending', created_at: 'now',
-    }),
-    async () => ({ id: 'user-1' })
-  )
+  registerCommunityRoutes(server, dbFor({ id: 'update-1', trail_id: 'trail-1', category: 'condition', severity: 'warning', message: 'Slippery rocks', reporter: 'user-1', status: 'pending', created_at: 'now' }), async () => ({ id: 'user-1', role: 'user' }))
   await server.ready()
-
-  const response = await server.inject({
-    method: 'POST',
-    url: '/community-updates',
-    payload: {
-      trailId: 'trail-1', category: 'condition', severity: 'warning',
-      message: 'Slippery rocks', reporter: 'attacker-supplied-id',
-    },
-  })
-
+  const response = await server.inject({ method: 'POST', url: '/community-updates', payload: { trailId: 'trail-1', category: 'condition', severity: 'warning', message: 'Slippery rocks', reporter: 'attacker-supplied-id' } })
   assert.equal(response.statusCode, 201)
   assert.equal(response.json().reporter, 'user-1')
   await server.close()
 })
 
-test('moderates an update only through an authenticated request', async () => {
+test('moderates an update with a moderator role', async () => {
   const server = Fastify()
-  registerCommunityRoutes(
-    server,
-    moderationDb({
-      id: 'update-1', trail_id: 'trail-1', category: 'condition', severity: 'warning',
-      message: 'Slippery rocks', reporter: 'user-1', status: 'approved', created_at: 'now',
-    }),
-    async () => ({ id: 'moderator-1' })
-  )
+  registerCommunityRoutes(server, moderationDb({ id: 'update-1', trail_id: 'trail-1', category: 'condition', severity: 'warning', message: 'Slippery rocks', reporter: 'user-1', status: 'approved', created_at: 'now' }), async () => ({ id: 'moderator-1', role: 'moderator' }))
   await server.ready()
-
   const response = await server.inject({ method: 'POST', url: '/community-updates/update-1/approve' })
-
   assert.equal(response.statusCode, 200)
   assert.equal(response.json().status, 'approved')
+  await server.close()
+})
+
+test('rejects regular users from moderation', async () => {
+  const server = Fastify()
+  registerCommunityRoutes(server, moderationDb(null), async () => ({ id: 'user-1', role: 'user' }))
+  await server.ready()
+  const response = await server.inject({ method: 'POST', url: '/community-updates/update-1/approve' })
+  assert.equal(response.statusCode, 403)
+  assert.deepEqual(response.json(), { error: 'Moderator role required' })
   await server.close()
 })
 
@@ -91,9 +75,7 @@ test('rejects unauthenticated community submission', async () => {
     return null
   })
   await server.ready()
-
   const response = await server.inject({ method: 'POST', url: '/community-updates', payload: {} })
-
   assert.equal(response.statusCode, 401)
   await server.close()
 })

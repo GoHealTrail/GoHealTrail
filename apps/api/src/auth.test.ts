@@ -45,13 +45,13 @@ test('rejects malformed authorization headers', async () => {
 test('returns the Supabase user for a valid bearer token', async () => {
   const response = reply()
   const requireUser = makeRequireAuthenticatedUser(async () => ({
-    data: { user: { id: 'user-123', email: 'user@example.test' } },
+    data: { user: { id: 'user-123', email: 'user@example.test', app_metadata: { role: 'moderator' } } },
     error: null,
   }))
 
   const user = await requireUser(request('Bearer valid-token'), response as never)
 
-  assert.deepEqual(user, { id: 'user-123', email: 'user@example.test' })
+  assert.deepEqual(user, { id: 'user-123', email: 'user@example.test', role: 'moderator' })
   assert.equal(response.state.status, 200)
 })
 

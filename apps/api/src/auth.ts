@@ -1,14 +1,17 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { supabase } from './lib/supabase.js'
 
+export type UserRole = 'user' | 'moderator' | 'admin'
+
 export type AuthenticatedUser = {
   id: string
   email?: string
+  role: UserRole
 }
 
 /* eslint-disable no-unused-vars -- token is part of the injected auth contract. */
 type AuthLookup = (token: string) => Promise<{
-  data: { user: { id: string; email?: string } | null }
+  data: { user: { id: string; email?: string; app_metadata?: Record<string, unknown> } | null }
   error: unknown
 }>
 /* eslint-enable no-unused-vars */
@@ -18,6 +21,10 @@ function bearerToken(request: FastifyRequest) {
   if (!value?.startsWith('Bearer ')) return null
   const token = value.slice('Bearer '.length).trim()
   return token || null
+}
+
+function roleFromMetadata(role: string | undefined): UserRole {
+  return role === 'admin' || role === 'moderator' ? role : 'user'
 }
 
 export function makeRequireAuthenticatedUser(authLookup: AuthLookup) {
@@ -39,6 +46,7 @@ export function makeRequireAuthenticatedUser(authLookup: AuthLookup) {
 
     return {
       id: data.user.id,
+      role: roleFromMetadata(typeof data.user.app_metadata?.role === 'string' ? data.user.app_metadata.role : undefined),
       ...(data.user.email ? { email: data.user.email } : {}),
     }
   }
@@ -47,7 +55,15 @@ export function makeRequireAuthenticatedUser(authLookup: AuthLookup) {
 export const requireAuthenticatedUser = makeRequireAuthenticatedUser(async (token) => {
   const { data, error } = await supabase.auth.getUser(token)
   return {
-    data: { user: data.user ? { id: data.user.id, ...(data.user.email ? { email: data.user.email } : {}) } : null },
+    data: {
+      user: data.user
+        ? {
+            id: data.user.id,
+            ...(data.user.email ? { email: data.user.email } : {}),
+            app_metadata: data.user.app_metadata,
+          }
+        : null,
+    },
     error,
   }
 })
