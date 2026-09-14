@@ -192,9 +192,25 @@ export const buildCommunityPayload = () => ({
 
 export const defaultCommunityApiBase = 'http://localhost:8080'
 
+export type SessionState = {
+  token: string
+  status: 'anonymous' | 'signed-in'
+}
+
+function buildAuthHeaders(session: SessionState): { authorization: string } | Record<string, never> {
+  if (session.status !== 'signed-in' || !session.token) {
+    return {}
+  }
+
+  return {
+    authorization: `Bearer ${session.token}`,
+  }
+}
+
 export async function submitCommunityTrailUpdate(
   payload: Omit<CommunityTrailUpdate, 'id' | 'reportedAt'>,
   apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
 ): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
   if (
     !payload?.trailId ||
@@ -206,10 +222,16 @@ export async function submitCommunityTrailUpdate(
     return { ok: false, error: 'Invalid community update payload.' }
   }
 
+  const headers = buildAuthHeaders(session)
+  if (!headers.authorization) {
+    return { ok: false, error: 'Authentication required to submit community updates.' }
+  }
+
   const response = await fetch(`${apiBase}/community-updates`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
+      ...headers,
     },
     body: JSON.stringify(payload),
   })
@@ -227,6 +249,7 @@ export async function moderateCommunityTrailUpdate(
   id: string,
   action: 'approve' | 'reject',
   apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
 ): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
   if (!id) {
     return { ok: false, error: 'Invalid community update id.' }
@@ -236,10 +259,17 @@ export async function moderateCommunityTrailUpdate(
     return { ok: false, error: 'Invalid moderation action.' }
   }
 
+  const headers = buildAuthHeaders(session)
+  if (!headers.authorization) {
+    return { ok: false, error: 'Authentication required to moderate community updates.' }
+  }
+
+
   const response = await fetch(`${apiBase}/community-updates/${id}/${action}`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
+      ...headers,
     },
   })
 
@@ -255,15 +285,17 @@ export async function moderateCommunityTrailUpdate(
 export async function approveCommunityTrailUpdate(
   id: string,
   apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
 ): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
-  return moderateCommunityTrailUpdate(id, 'approve', apiBase)
+  return moderateCommunityTrailUpdate(id, 'approve', apiBase, session)
 }
 
 export async function rejectCommunityTrailUpdate(
   id: string,
   apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
 ): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
-  return moderateCommunityTrailUpdate(id, 'reject', apiBase)
+  return moderateCommunityTrailUpdate(id, 'reject', apiBase, session)
 }
 
 export const pendingCommunityPayload = buildCommunityPayload
