@@ -8,6 +8,7 @@ import { supabase } from './lib/supabase.js'
 import { seedDatabase } from './seed.js'
 import { requireAuthenticatedUser } from './auth.js'
 import { registerPlanRoutes } from './plan-routes.js'
+import { registerCommunityRoutes } from './community-routes.js'
 
 // Raw shape returned by Supabase select() on community_trail_updates.
 // Columns are snake_case; the handlers map them to the camelCase API shape.
@@ -111,6 +112,7 @@ async function bootstrap() {
   })
 
   registerPlanRoutes(server, supabase, requireAuthenticatedUser)
+  registerCommunityRoutes(server, supabase, requireAuthenticatedUser)
 
 
   // GET /offline-manifest
@@ -214,6 +216,8 @@ async function bootstrap() {
     }
   })
 
+  /* Legacy community mutation handlers replaced by registerCommunityRoutes. */
+  /*
   // POST /community-updates/:id/approve
   server.post('/community-updates/:id/approve', async (request, reply) => {
     const { id } = request.params as { id: string }
@@ -336,6 +340,7 @@ async function bootstrap() {
       reportedAt: data.created_at,
     }
   })
+  */
 
   await server.listen({ host: '0.0.0.0', port: 8080 })
 }
