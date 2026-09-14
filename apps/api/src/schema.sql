@@ -35,6 +35,21 @@ CREATE TABLE IF NOT EXISTS trip_plans (
 );
 
 -- community_trail_updates table
+-- SOS incidents are owned by the authenticated Supabase user.
+CREATE TABLE IF NOT EXISTS sos_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  contacts JSONB NOT NULL DEFAULT '[]'::jsonb,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'accepted' CHECK (status IN ('accepted', 'resolved', 'cancelled')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sos_events_user_id ON sos_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_sos_events_created_at ON sos_events(created_at DESC);
+
 CREATE TABLE IF NOT EXISTS community_trail_updates (
   id TEXT PRIMARY KEY,
   trail_id TEXT REFERENCES trails(id) ON DELETE CASCADE,

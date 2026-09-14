@@ -9,6 +9,7 @@ import { seedDatabase } from './seed.js'
 import { requireAuthenticatedUser } from './auth.js'
 import { registerPlanRoutes } from './plan-routes.js'
 import { registerCommunityRoutes } from './community-routes.js'
+import { registerSosRoutes } from './sos-routes.js'
 
 // Raw shape returned by Supabase select() on community_trail_updates.
 // Columns are snake_case; the handlers map them to the camelCase API shape.
@@ -113,6 +114,7 @@ async function bootstrap() {
 
   registerPlanRoutes(server, supabase, requireAuthenticatedUser)
   registerCommunityRoutes(server, supabase, requireAuthenticatedUser)
+  registerSosRoutes(server, supabase, requireAuthenticatedUser)
 
 
   // GET /offline-manifest
@@ -129,36 +131,7 @@ async function bootstrap() {
     }
   })
 
-  // POST /sos
-  server.post('/sos', async (request, reply) => {
-    const user = await requireAuthenticatedUser(request, reply)
-    if (!user) return
-
-    const payload = request.body as {
-      latitude?: number
-      longitude?: number
-      contacts?: string[]
-      notes?: string
-    }
-
-    if (typeof payload.latitude !== 'number' || typeof payload.longitude !== 'number') {
-      await reply.code(400)
-      return { error: 'Invalid SOS payload. Numeric latitude/longitude required.' }
-    }
-
-    const eventId = randomUUID()
-
-    return {
-      eventId,
-      userId: user.id,
-      status: 'accepted',
-      sharedLocation: {
-        latitude: payload.latitude,
-        longitude: payload.longitude,
-      },
-      notes: payload.notes ?? 'No extra notes provided',
-    }
-  })
+  // SOS is registered by registerSosRoutes.
 
   // GET /community-updates
   server.get('/community-updates', async () => {
