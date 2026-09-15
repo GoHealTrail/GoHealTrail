@@ -7,14 +7,42 @@ export interface User {
   role: UserRole
 }
 
+export type TrailDifficulty = 'easy' | 'moderate' | 'hard'
+export type SafetyLevel = 'normal' | 'advisory' | 'danger' | 'closed'
+export type SafetySource = 'official' | 'ranger' | 'community' | 'system'
+
+export interface TrailPermitInfo {
+  required: boolean
+  localFee?: number
+  foreignFee?: number
+  leadTimeDays?: number
+  notes: string[]
+}
+
+export interface SafetySummary {
+  level: SafetyLevel
+  reasons: string[]
+  source: SafetySource
+  observedAt: string
+  expiresAt?: string
+}
+
+export interface TrailReadiness {
+  status: 'ready' | 'warning' | 'blocked'
+  missing: string[]
+  recommendations: string[]
+}
+
 export interface Trail {
   id: string
   name: string
   state: string
-  difficulty: 'easy' | 'moderate' | 'hard'
+  difficulty: TrailDifficulty
   distanceKm: number
   durationMinutes: number
   hasWater?: boolean
+  permit?: TrailPermitInfo
+  safety?: SafetySummary
 }
 
 export interface TripPlan {
@@ -25,6 +53,8 @@ export interface TripPlan {
   endDate: string
   itinerary: Array<{ day: number; trailId: string; notes: string }>
   checklist: string[]
+  readiness?: TrailReadiness
+  offlineManifestVersion?: string
 }
 
 export interface CommunityTrailUpdate {
