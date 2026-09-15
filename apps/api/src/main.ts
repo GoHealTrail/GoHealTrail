@@ -1,7 +1,5 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import { randomUUID } from 'node:crypto'
-
 import 'dotenv/config'
 import type { CommunityTrailUpdate } from '@gohealt/shared-types'
 import { supabase } from './lib/supabase.js'
