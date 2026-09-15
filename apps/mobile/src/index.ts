@@ -1,4 +1,4 @@
-import type { Trail, TripPlan } from '@gohealt/shared-types'
+import type { Trail, TripPlan, CommunityTrailUpdate } from '@gohealt/shared-types'
 
 type RegionReference = {
   state: string
@@ -132,7 +132,39 @@ export const alerts = [
   },
 ]
 
+export const communityUpdates: CommunityTrailUpdate[] = [
+  {
+    id: '1',
+    trailId: 't-002',
+    category: 'water',
+    severity: 'warning',
+    status: 'approved',
+    message: 'Water flow currently low before sunrise; carry extra water.',
+    reporter: 'Community ranger report',
+    reportedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    trailId: 't-001',
+    category: 'leech',
+    severity: 'warning',
+    message: 'Leech activity is common in the lower stretch after rain.',
+    status: 'approved',
+    reporter: 'Local hiker',
+    reportedAt: new Date().toISOString(),
+  },
+]
+
 export const starterChecklist = ['Water', 'Food', 'Torch', 'Rain jacket', 'First aid kit']
+
+export const defaultCommunityUpdatePayload = {
+  trailId: 't-002',
+  category: 'other' as const,
+  severity: 'info' as const,
+  message: 'Community check-in',
+  status: 'pending' as const,
+  reporter: 'Mobile',
+}
 
 export function buildPlan(title: string, userId: string, selectedTrailId: string): TripPlan {
   return {
@@ -151,3 +183,119 @@ export function buildPlan(title: string, userId: string, selectedTrailId: string
     checklist: [...starterChecklist],
   }
 }
+
+export const buildCommunityPayload = () => ({
+  ...defaultCommunityUpdatePayload,
+  message: `Update at ${new Date().toISOString()}`,
+  trailId: trails[0]?.id ?? 't-001',
+})
+
+export const defaultCommunityApiBase = 'http://localhost:8080'
+
+export type SessionState = {
+  token: string
+  status: 'anonymous' | 'signed-in'
+}
+
+function buildAuthHeaders(session: SessionState): { authorization: string } | Record<string, never> {
+  if (session.status !== 'signed-in' || !session.token) {
+    return {}
+  }
+
+  return {
+    authorization: `Bearer ${session.token}`,
+  }
+}
+
+export async function submitCommunityTrailUpdate(
+  payload: Omit<CommunityTrailUpdate, 'id' | 'reportedAt'>,
+  apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  if (
+    !payload?.trailId ||
+    !payload?.category ||
+    !payload?.severity ||
+    !payload?.message ||
+    !payload?.reporter
+  ) {
+    return { ok: false, error: 'Invalid community update payload.' }
+  }
+
+  const headers = buildAuthHeaders(session)
+  if (!headers.authorization) {
+    return { ok: false, error: 'Authentication required to submit community updates.' }
+  }
+
+  const response = await fetch(`${apiBase}/community-updates`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...headers,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    return { ok: false, error: body || `Request failed with ${response.status}` }
+  }
+
+  const update = (await response.json()) as CommunityTrailUpdate
+  return { ok: true, update }
+}
+
+export async function moderateCommunityTrailUpdate(
+  id: string,
+  action: 'approve' | 'reject',
+  apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  if (!id) {
+    return { ok: false, error: 'Invalid community update id.' }
+  }
+
+  if (action !== 'approve' && action !== 'reject') {
+    return { ok: false, error: 'Invalid moderation action.' }
+  }
+
+  const headers = buildAuthHeaders(session)
+  if (!headers.authorization) {
+    return { ok: false, error: 'Authentication required to moderate community updates.' }
+  }
+
+
+  const response = await fetch(`${apiBase}/community-updates/${id}/${action}`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...headers,
+    },
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    return { ok: false, error: body || `Request failed with ${response.status}` }
+  }
+
+  const update = (await response.json()) as CommunityTrailUpdate
+  return { ok: true, update }
+}
+
+export async function approveCommunityTrailUpdate(
+  id: string,
+  apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  return moderateCommunityTrailUpdate(id, 'approve', apiBase, session)
+}
+
+export async function rejectCommunityTrailUpdate(
+  id: string,
+  apiBase = defaultCommunityApiBase,
+  session: SessionState = { token: '', status: 'anonymous' },
+): Promise<{ ok: true; update: CommunityTrailUpdate } | { ok: false; error: string }> {
+  return moderateCommunityTrailUpdate(id, 'reject', apiBase, session)
+}
+
+export const pendingCommunityPayload = buildCommunityPayload

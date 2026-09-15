@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 
@@ -27,10 +27,12 @@ for (const envPath of envPathCandidates) {
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error(
-    `Missing Supabase environment variables. URL set=${!!supabaseUrl}, SERVICE key set=${!!supabaseServiceKey}, cwd=${process.cwd()}`
-  )
-}
-
-export const supabase = createClient(supabaseUrl, supabaseServiceKey)
+export const supabase = supabaseUrl && supabaseServiceKey
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : new Proxy({}, {
+      get() {
+        throw new Error(
+          `Missing Supabase environment variables. URL set=${!!supabaseUrl}, SERVICE key set=${!!supabaseServiceKey}, cwd=${process.cwd()}`
+        )
+      },
+    }) as ReturnType<typeof createClient>

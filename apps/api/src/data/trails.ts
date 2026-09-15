@@ -7,6 +7,15 @@ export interface Alert {
   message: string
 }
 
+export interface DemoCommunityUpdate {
+  trailId: string
+  category: 'closure' | 'water' | 'condition' | 'leech' | 'mud' | 'other'
+  severity: 'info' | 'warning' | 'danger'
+  status: 'pending' | 'approved' | 'rejected'
+  message: string
+  reporter: string
+}
+
 export const demoTrails: Trail[] = [
   {
     id: 't-001',
@@ -15,7 +24,7 @@ export const demoTrails: Trail[] = [
     difficulty: 'moderate',
     distanceKm: 6.5,
     durationMinutes: 240,
-    hasWater: true
+    hasWater: true,
   },
   {
     id: 't-002',
@@ -24,7 +33,7 @@ export const demoTrails: Trail[] = [
     difficulty: 'hard',
     distanceKm: 11,
     durationMinutes: 360,
-    hasWater: true
+    hasWater: true,
   },
   {
     id: 't-003',
@@ -33,7 +42,7 @@ export const demoTrails: Trail[] = [
     difficulty: 'easy',
     distanceKm: 4.2,
     durationMinutes: 150,
-    hasWater: false
+    hasWater: false,
   },
   {
     id: 't-004',
@@ -42,7 +51,7 @@ export const demoTrails: Trail[] = [
     difficulty: 'easy',
     distanceKm: 5,
     durationMinutes: 120,
-    hasWater: false
+    hasWater: false,
   },
   {
     id: 't-005',
@@ -51,8 +60,8 @@ export const demoTrails: Trail[] = [
     difficulty: 'hard',
     distanceKm: 9,
     durationMinutes: 320,
-    hasWater: true
-  }
+    hasWater: true,
+  },
 ]
 
 export const demoAlerts: Alert[] = [
@@ -60,14 +69,49 @@ export const demoAlerts: Alert[] = [
     trailId: 't-002',
     level: 'warning',
     title: 'Recent heavy rain',
-    message: 'Sections near summit are slippery. Carry anti-slip gear and avoid dusk travel.'
+    message: 'Sections near summit are slippery. Carry anti-slip gear and avoid dusk travel.',
   },
   {
     trailId: 't-004',
     level: 'info',
     title: 'Updated water refill point',
-    message: 'Water station at FRIM River Trail checkpoint is open on weekends.'
-  }
+    message: 'Water station at FRIM River Trail checkpoint is open on weekends.',
+  },
+]
+
+export const demoCommunityUpdates: DemoCommunityUpdate[] = [
+  {
+    trailId: 't-002',
+    category: 'water',
+    severity: 'warning',
+    status: 'approved',
+    message: 'Water flow currently low before sunrise; carry enough water.',
+    reporter: 'Community ranger report',
+  },
+  {
+    trailId: 't-004',
+    category: 'mud',
+    severity: 'warning',
+    status: 'approved',
+    message: 'Mud patches appeared after recent rain on river crossing section.',
+    reporter: 'Volunteer check-in',
+  },
+  {
+    trailId: 't-001',
+    category: 'condition',
+    severity: 'info',
+    status: 'approved',
+    message: 'Trail signs refreshed and one new bench added near rest point.',
+    reporter: 'Local guide',
+  },
+  {
+    trailId: 't-005',
+    category: 'leech',
+    severity: 'warning',
+    status: 'pending',
+    message: 'Leech activity reported in lower section after rain.',
+    reporter: 'Hiker report',
+  },
 ]
 
 export const offlineManifestVersion = '2026-09-07'

@@ -8,6 +8,11 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  },
   "scripts": {
     "dev:web": "npm run --workspace @gohealt/web dev",
     "dev:mobile": "npm run --workspace @gohealt/mobile dev",

@@ -136,6 +136,10 @@ function startApiServer(repoRoot, env) {
       cwd: repoRoot,
       env,
       stdio: ['ignore', 'pipe', 'pipe'],
+      // Node's CVE-2024-27980 fix makes spawn() throw EINVAL on Windows when the
+      // target is a .cmd/.bat without a shell. Args here are static, so there is
+      // no interpolation surface for the shell to reinterpret.
+      shell: process.platform === 'win32',
     }
   )
 
@@ -225,9 +229,14 @@ async function main() {
       throw new Error('GET /alerts response shape mismatch')
     }
 
-    const plansPayload = await requestJson(`${baseUrl}/plans?userId=smoke-test-user`)
-    if (!Array.isArray(plansPayload?.plans)) {
-      throw new Error('GET /plans response shape mismatch')
+    const plansResponse = await fetchWithTimeout(`${baseUrl}/plans?userId=smoke-test-user`)
+    if (plansResponse.status !== 401) {
+      throw new Error(`GET /plans must require authentication, received ${plansResponse.status}`)
+    }
+
+    const plansError = await plansResponse.json().catch(() => null)
+    if (plansError?.error !== 'Authentication required') {
+      throw new Error('GET /plans authentication response mismatch')
     }
 
     const manifestPayload = await requestJson(`${baseUrl}/offline-manifest`)
@@ -243,26 +252,26 @@ async function main() {
       }
     }
 
-    const sosPayload = await requestJson(
-      `${baseUrl}/sos`,
-      {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: 'smoke-test-user',
-          latitude: 3.139,
-          longitude: 101.686,
-          contacts: ['+60123456789'],
-          notes: 'Automated smoke test',
-        }),
+    const sosResponse = await fetchWithTimeout(`${baseUrl}/sos`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
       },
-      200
-    )
+      body: JSON.stringify({
+        latitude: 3.139,
+        longitude: 101.686,
+        contacts: ['+601****6789'],
+        notes: 'Automated smoke test',
+      }),
+    })
 
-    if (!sosPayload?.eventId || sosPayload?.status !== 'accepted') {
-      throw new Error('POST /sos response mismatch')
+    if (sosResponse.status !== 401) {
+      throw new Error(`POST /sos must require authentication, received ${sosResponse.status}`)
+    }
+
+    const sosError = await sosResponse.json().catch(() => null)
+    if (sosError?.error !== 'Authentication required') {
+      throw new Error('POST /sos authentication response mismatch')
     }
 
     console.log('PASS: API smoke checks succeeded')

@@ -34,8 +34,41 @@ CREATE TABLE IF NOT EXISTS trip_plans (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- community_trail_updates table
+-- SOS incidents are owned by the authenticated Supabase user.
+CREATE TABLE IF NOT EXISTS sos_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  contacts JSONB NOT NULL DEFAULT '[]'::jsonb,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'accepted' CHECK (status IN ('accepted', 'resolved', 'cancelled')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sos_events_user_id ON sos_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_sos_events_created_at ON sos_events(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS community_trail_updates (
+  id TEXT PRIMARY KEY,
+  trail_id TEXT REFERENCES trails(id) ON DELETE CASCADE,
+  category TEXT NOT NULL CHECK (
+    category IN ('closure', 'water', 'condition', 'leech', 'mud', 'other')
+  ),
+  severity TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'danger')),
+  message TEXT NOT NULL,
+  reporter TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (
+    status IN ('pending', 'approved', 'rejected')
+  ),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- optional: add indexes
 CREATE INDEX IF NOT EXISTS idx_trails_state ON trails(state);
 CREATE INDEX IF NOT EXISTS idx_trails_difficulty ON trails(difficulty);
 CREATE INDEX IF NOT EXISTS idx_alerts_trail_id ON alerts(trail_id);
 CREATE INDEX IF NOT EXISTS idx_trip_plans_user_id ON trip_plans(user_id);
+CREATE INDEX IF NOT EXISTS idx_community_updates_trail_id ON community_trail_updates(trail_id);
+CREATE INDEX IF NOT EXISTS idx_community_updates_severity ON community_trail_updates(severity);

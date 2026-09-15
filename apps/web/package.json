@@ -6,24 +6,35 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "test": "echo \"No web tests yet\""
   },
   "dependencies": {
-    "next": "14.2.35",
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^2.1.4",
+    "@eslint/eslintrc": "^3.3.7",
+    "@eslint/js": "^9.9.1",
+    "@humanwhocodes/config-array": "^0.11.14",
+    "@next/env": "16.3.5",
+    "@next/eslint-plugin-next": "16.3.5",
+    "@rushstack/eslint-patch": "^1.16.1",
+    "@swc/helpers": "0.5.23",
     "@types/node": "22.9.0",
     "@types/react": "18.3.5",
     "@types/react-dom": "18.3.0",
     "@typescript-eslint/eslint-plugin": "^8.69.0",
     "@typescript-eslint/parser": "^8.20.0",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.35",
+    "eslint": "9.9.1",
+    "eslint-config-next": "16.3.5",
+    "eslint-import-resolver-node": "^0.3.10",
+    "eslint-import-resolver-typescript": "^3.10.1",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "next": "^16.3.5",
     "typescript": "5.5.4"
   }
 }

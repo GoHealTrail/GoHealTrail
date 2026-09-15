@@ -1,32 +1,42 @@
-# GoHealTrail MVP Definition
+# GoHealTrail MVP Tracker
 
-## MVP status
-The core MVP implementation has started and key user flows are now executable in the web app + API skeleton:
-- API routes for trails, trail details, plans, offline manifest, and SOS
-- Web MVP page with trail search/filter, trip planning draft, offline package export, and SOS trigger
+**Single-page tracker for planning and execution** (priorities: **P0 / P1 / P2**, statuses: **Done / In Progress / Blocker**).
 
-## MVP goal (this release)
-- Trail discovery and filters
-- Trail detail and condition feed
-- Trip planner with checklist
-- Offline trail package (selected trails)
-- Weather/safety alerts
-- SOS flow
-- Community trail updates (hardcoded dataset for MVP seed)
+## Scope and current state
+The MVP implementation is in seed form with key flows wired in web + API + mobile parity scaffolding.
 
-## Acceptance criteria
-- User can open app and view 5+ sample trails ✅
-- User can create a simple 1-day trip plan with at least 3 checklist items ✅
-- Offline mode shows cached plan details when offline (manifest download available) ✅
-- SOS button triggers a tracked event ✅
-- Safety banner appears when a trail is flagged high risk ✅
+## MVP feature tracker
 
-## Not in MVP
-- Booking payments
-- Internal e-commerce
-- Full analytics dashboard
-- Background sync auto-conflict resolution (v2)
+| ID | Feature | Priority | Owner | Status | Notes |
+|---|---|---:|---|---|---|
+| MVP-01 | Trail discovery + filters | P0 | Web, API | Done | API list + detail endpoints exist; web page supports state/difficulty filtering over seeded trails. |
+| MVP-02 | Trail detail + condition feed | P0 | Web, Mobile | Done | Condition feed exists in seeded trail/alert data and rule-based safety reminders. |
+| MVP-03 | Trip planner with checklist | P0 | Web, Mobile | Done | 1-day plan creation works; checklist includes baseline safety items. |
+| MVP-04 | Offline trail package / manifest | P0 | API, Web, Mobile | Done | `/offline-manifest` endpoint added; offline-oriented export data exists in UI seed flow. |
+| MVP-05 | Weather and safety alerts | P0 | Web, Mobile, API | Done | Seeded alerts with severity + safety banner/rules are visible in app data model. |
+| MVP-06 | SOS emergency flow | P1 | Mobile, API | Done | `/sos` endpoint returns tracked event object; UI includes emergency trigger flow. |
+| MVP-07 | Community trail updates | P1 | Web, API, Mobile | Done | Added API moderation endpoints, shared status-aware payload contract, web moderation + status-filter UI, and mobile moderation helper API surface for approve/reject parity. |
+
+## Acceptance criteria status
+
+| Criterion | Status | Owner | Proof |
+|---|---|---|---|
+| Open app and view 5+ sample trails | Done | Web | Static seeded trail dataset (5+ items currently defined). |
+| Create a 1-day trip plan with checklist (3+ items) | Done | Web | Plan builder and mobile `buildPlan()` helper. |
+| Offline manifest download / cached plan details | Done | API | `/offline-manifest` endpoint + seed offline payload in web flow. |
+| SOS trigger produces tracked event | Done | API | `POST /sos` returns event payload for tracking assertions. |
+| Safety banner appears for high-risk trail | Done | Web, Mobile | Safety banner/rules + alert severity values in seeded data. |
+| Community updates can be submitted and moderated | Done | Web, API, Mobile | Web supports submit/filter/status display + approve/reject actions; mobile exposes submit + moderation helper wrappers. |
+
+## Roadmap (out of MVP scope for now)
+
+| ID | Feature | Priority | Owner | Status |
+|---|---|---:|---|---|
+| MVP-N1 | Booking payments | P2 | Product | Blocker |
+| MVP-N2 | Internal e-commerce | P2 | Product | Blocker |
+| MVP-N3 | Full analytics dashboard | P2 | Product | Blocker |
+| MVP-N4 | Background sync conflict resolution | P2 | Platform | Blocker |
 
 ## Notes
-- Current implementation is functional MVP seed code, not production hardening.
-- Remaining production work: persistence, auth, real weather/map integrations, push notifications, and robust mobile parity.
+- Current implementation is a functional MVP seed, not production-hardened.
+- Next blockers to remove: persistence/auth, real weather/map integrations, push notifications, and mobile parity hardening.
