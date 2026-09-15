@@ -192,6 +192,19 @@ export const buildCommunityPayload = () => ({
 
 export const defaultCommunityApiBase = 'http://localhost:8080'
 
+export const mobileAppSections = ['Discover trails', 'Trip planner', 'Community updates', 'Emergency'] as const
+
+export function renderMobileAppModel() {
+  return {
+    sections: mobileAppSections,
+    trails,
+    alerts,
+    communityUpdates,
+    safetyRules,
+    permitNotice,
+  }
+}
+
 export type SessionState = {
   token: string
   status: 'anonymous' | 'signed-in'

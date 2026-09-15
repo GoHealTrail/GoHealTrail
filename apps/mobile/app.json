@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "GoHealTrail",
+    "slug": "gohealttrail",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android"],
+    "entryPoint": "./src/app.tsx"
+  }
+}

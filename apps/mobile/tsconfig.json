@@ -6,7 +6,7 @@
     "jsx": "react-native",
     "moduleResolution": "bundler",
     "strict": true,
-    "types": ["react-native", "react"],
+    "types": ["react-native", "react", "node"],
     "baseUrl": ".",
     "paths": {
       "@gohealt/shared-types": ["../packages/shared-types/src/index.ts"],
