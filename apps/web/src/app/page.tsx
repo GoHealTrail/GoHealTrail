@@ -5,7 +5,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS, offlinePackageFreshness } from '@gohealt/shared-types'
-import type { CommunityTrailUpdate, OfflinePackageMetadata, Trail, TripPlan, TrailReadiness, TrailPermitInfo, SafetySummary, WeatherRisk } from '@gohealt/shared-types'
+import type { CommunityTrailUpdate, OfflinePackageMetadata, Trail, TripPlan, WeatherRisk } from '@gohealt/shared-types'
+import { buildTrailReadiness, defaultPermit, defaultSafety } from '../lib/readiness'
 
 
 
@@ -500,40 +501,7 @@ function weatherForTrail(trailId: string) {
   }
 }
 
-const defaultPermit: TrailPermitInfo = {
-  required: false,
-  notes: ['Check the latest district or forestry notice before departure.'],
-}
 
-const defaultSafety: SafetySummary = {
-  level: 'normal',
-  reasons: [],
-  source: 'system',
-  observedAt: new Date().toISOString(),
-}
-
-function buildTrailReadiness(trail: Trail): TrailReadiness {
-  const missing: string[] = []
-  const recommendations: string[] = []
-  const permit = trail.permit ?? defaultPermit
-  const safety = trail.safety ?? defaultSafety
-
-  if (!trail.hasWater) missing.push('Carry extra water')
-  if (permit.required) missing.push('Confirm permit')
-  if (safety.level === 'danger' || safety.level === 'closed') {
-    recommendations.push('Do not start this trail while the safety alert is active.')
-  } else if (safety.level === 'advisory') {
-    recommendations.push(...safety.reasons)
-  }
-
-  return {
-    status: safety.level === 'closed' || safety.level === 'danger'
-      ? 'blocked'
-      : missing.length > 0 || recommendations.length > 0 ? 'warning' : 'ready',
-    missing,
-    recommendations,
-  }
-}
 
 
 
