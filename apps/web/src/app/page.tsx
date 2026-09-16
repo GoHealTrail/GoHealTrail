@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import type { CommunityTrailUpdate, Trail, TripPlan, TrailReadiness, TrailPermitInfo, SafetySummary } from '@gohealt/shared-types'
+import type { CommunityTrailUpdate, Trail, TripPlan, TrailReadiness, TrailPermitInfo, SafetySummary, WeatherRisk } from '@gohealt/shared-types'
 
 
 
@@ -458,6 +458,23 @@ const offlineManifestVersion = '2026-09-15-web-readiness-v1'
 
 const defaultChecklist = ['Water', 'Food', 'Power bank', 'First aid kit', 'Rain jacket', 'Permit confirmed', 'Weather checked', 'Offline package downloaded']
 
+const weatherRiskFromAlert: Record<'info' | 'warning' | 'danger', WeatherRisk> = {
+  info: 'normal',
+  warning: 'advisory',
+  danger: 'danger',
+}
+
+function weatherForTrail(trailId: string) {
+  const alert = demoAlerts.find((item) => item.trailId === trailId)
+  if (!alert) return undefined
+
+  return {
+    risk: weatherRiskFromAlert[alert.level],
+    reasons: [alert.title, alert.message],
+    observedAt: new Date().toISOString(),
+  }
+}
+
 const defaultPermit: TrailPermitInfo = {
   required: false,
   notes: ['Check the latest district or forestry notice before departure.'],
@@ -621,9 +638,11 @@ function TrailListItem({
 
 }) {
 
-  const readiness = buildTrailReadiness(trail)
+  const trailWithWeather = { ...trail, weather: weatherForTrail(trail.id) }
+  const readiness = buildTrailReadiness(trailWithWeather)
   const safety = trail.safety ?? defaultSafety
   const permit = trail.permit ?? defaultPermit
+  const weather = trailWithWeather.weather
 
   return (
 
@@ -640,8 +659,9 @@ function TrailListItem({
       </div>
 
       <div style={{ marginTop: 6 }}>
-        Safety: <strong>{safety.level}</strong> · Permit: {permit.required ? 'required' : 'check locally'} · Readiness: {readiness.status}
+        Safety: <strong>{safety.level}</strong> · Weather: {weather?.risk ?? 'normal'} · Permit: {permit.required ? 'required' : 'check locally'} · Readiness: {readiness.status}
       </div>
+      {weather && <div style={{ marginTop: 4, opacity: 0.85 }}>Weather signal: {weather.reasons.join(' — ')}</div>}
 
       <div style={{ marginTop: 8 }}>
 
@@ -1308,6 +1328,8 @@ export default function Home() {
     ],
 
     checklist: defaultChecklist,
+    readiness: buildTrailReadiness({ ...selectedTrail, weather: weatherForTrail(selectedTrail.id) }),
+    offlineManifestVersion,
 
   }
 

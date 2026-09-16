@@ -1,4 +1,5 @@
-import type { Trail, TripPlan, CommunityTrailUpdate, TrailReadiness } from '@gohealt/shared-types'
+import { deriveReadinessStatus } from '@gohealt/shared-types'
+import type { Trail, TripPlan, CommunityTrailUpdate, TrailReadiness, WeatherRisk } from '@gohealt/shared-types'
 
 type RegionReference = {
   state: string
@@ -129,6 +130,9 @@ export const alerts = [
     level: 'warning' as const,
     title: 'Heavy rain expected',
     message: 'Wear anti-slip shoes, avoid rocky shortcuts.',
+    weatherRisk: 'advisory' as WeatherRisk,
+    observedAt: '2026-09-15T06:00:00Z',
+    expiresAt: '2026-09-16T06:00:00Z',
   },
 ]
 
@@ -162,21 +166,23 @@ export const offlineManifestVersion = '2026-09-15-mobile-readiness-v1'
 export function buildTrailReadiness(trail: Trail): TrailReadiness {
   const missing: string[] = []
   const recommendations: string[] = []
+  const weatherRisk = trail.weather?.risk ?? 'normal'
+  const safetyLevel = trail.safety?.level ?? 'normal'
 
   if (!trail.hasWater) missing.push('Carry extra water')
   if (trail.permit?.required) missing.push('Confirm permit')
-  if (trail.safety?.level === 'danger' || trail.safety?.level === 'closed') {
+  if (weatherRisk === 'danger' || safetyLevel === 'danger' || safetyLevel === 'closed') {
     recommendations.push('Do not start this trail while the safety alert is active.')
-  } else if (trail.safety?.level === 'advisory') {
-    recommendations.push(...trail.safety.reasons)
+  } else if (weatherRisk === 'advisory' || safetyLevel === 'advisory') {
+    recommendations.push(...(trail.weather?.reasons ?? trail.safety?.reasons ?? []))
   }
 
   return {
-    status: trail.safety?.level === 'closed' || trail.safety?.level === 'danger'
-      ? 'blocked'
-      : missing.length > 0 || recommendations.length > 0
-        ? 'warning'
-        : 'ready',
+    status: deriveReadinessStatus(
+      trail.weather,
+      trail.safety,
+      missing.length,
+    ),
     missing,
     recommendations,
   }

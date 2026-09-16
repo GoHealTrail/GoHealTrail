@@ -3,22 +3,62 @@ import test from 'node:test'
 import {
   buildPlan,
   buildCommunityPayload,
+  buildTrailReadiness,
   mobileAppSections,
   moderateCommunityTrailUpdate,
   submitCommunityTrailUpdate,
 } from './index.js'
+import type { Trail } from '@gohealt/shared-types'
 
 test('mobile app exposes the core trail workflow sections', () => {
   assert.deepEqual(mobileAppSections, ['Discover trails', 'Trip planner', 'Community updates', 'Emergency'])
 })
 
-test('builds a one-day plan with the selected trail and safety checklist', () => {
+test('builds a one-day plan with readiness and offline manifest metadata', () => {
   const plan = buildPlan('Weekend plan', 'user-1', 't-002')
 
   assert.equal(plan.title, 'Weekend plan')
   assert.equal(plan.userId, 'user-1')
   assert.equal(plan.itinerary[0]?.trailId, 't-002')
   assert.ok(plan.checklist.length >= 3)
+  assert.equal(plan.offlineManifestVersion, '2026-09-15-mobile-readiness-v1')
+  assert.equal(plan.readiness?.status, 'ready')
+})
+
+test('marks trails without water as needing preparation', () => {
+  const trail: Trail = {
+    id: 't-test',
+    name: 'Dry trail',
+    state: 'Selangor',
+    difficulty: 'easy',
+    distanceKm: 2,
+    durationMinutes: 60,
+    hasWater: false,
+  }
+
+  const readiness = buildTrailReadiness(trail)
+
+  assert.equal(readiness.status, 'warning')
+  assert.deepEqual(readiness.missing, ['Carry extra water'])
+})
+
+test('blocks dangerous trails', () => {
+  const trail: Trail = {
+    id: 't-danger',
+    name: 'Danger trail',
+    state: 'Pahang',
+    difficulty: 'hard',
+    distanceKm: 8,
+    durationMinutes: 300,
+    safety: {
+      level: 'danger',
+      reasons: ['Flash flood warning'],
+      source: 'official',
+      observedAt: '2026-09-15T00:00:00Z',
+    },
+  }
+
+  assert.equal(buildTrailReadiness(trail).status, 'blocked')
 })
 
 test('rejects community submission without an authenticated session', async () => {
