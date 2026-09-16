@@ -1,4 +1,4 @@
-import type { Trail, TripPlan, CommunityTrailUpdate } from '@gohealt/shared-types'
+import type { Trail, TripPlan, CommunityTrailUpdate, TrailReadiness } from '@gohealt/shared-types'
 
 type RegionReference = {
   state: string
@@ -157,6 +157,31 @@ export const communityUpdates: CommunityTrailUpdate[] = [
 
 export const starterChecklist = ['Water', 'Food', 'Torch', 'Rain jacket', 'First aid kit']
 
+export const offlineManifestVersion = '2026-09-15-mobile-readiness-v1'
+
+export function buildTrailReadiness(trail: Trail): TrailReadiness {
+  const missing: string[] = []
+  const recommendations: string[] = []
+
+  if (!trail.hasWater) missing.push('Carry extra water')
+  if (trail.permit?.required) missing.push('Confirm permit')
+  if (trail.safety?.level === 'danger' || trail.safety?.level === 'closed') {
+    recommendations.push('Do not start this trail while the safety alert is active.')
+  } else if (trail.safety?.level === 'advisory') {
+    recommendations.push(...trail.safety.reasons)
+  }
+
+  return {
+    status: trail.safety?.level === 'closed' || trail.safety?.level === 'danger'
+      ? 'blocked'
+      : missing.length > 0 || recommendations.length > 0
+        ? 'warning'
+        : 'ready',
+    missing,
+    recommendations,
+  }
+}
+
 export const defaultCommunityUpdatePayload = {
   trailId: 't-002',
   category: 'other' as const,
@@ -167,6 +192,9 @@ export const defaultCommunityUpdatePayload = {
 }
 
 export function buildPlan(title: string, userId: string, selectedTrailId: string): TripPlan {
+  const selectedTrail = trails.find((trail) => trail.id === selectedTrailId) ?? trails[0]
+  const readiness = selectedTrail ? buildTrailReadiness(selectedTrail) : undefined
+
   return {
     id: `plan-${Date.now()}`,
     title,
@@ -181,6 +209,8 @@ export function buildPlan(title: string, userId: string, selectedTrailId: string
       },
     ],
     checklist: [...starterChecklist],
+    readiness,
+    offlineManifestVersion,
   }
 }
 
@@ -191,6 +221,19 @@ export const buildCommunityPayload = () => ({
 })
 
 export const defaultCommunityApiBase = 'http://localhost:8080'
+
+export const mobileAppSections = ['Discover trails', 'Trip planner', 'Community updates', 'Emergency'] as const
+
+export function renderMobileAppModel() {
+  return {
+    sections: mobileAppSections,
+    trails,
+    alerts,
+    communityUpdates,
+    safetyRules,
+    permitNotice,
+  }
+}
 
 export type SessionState = {
   token: string
