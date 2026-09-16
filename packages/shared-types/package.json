@@ -7,9 +7,10 @@
     "build": "echo \"types exported\"",
     "typecheck": "tsc --noEmit",
     "lint": "echo \"No lint for types\"",
-    "test": "echo \"No types tests yet\""
+    "test": "node --import tsx --test src/**/*.test.ts"
   },
   "devDependencies": {
+    "tsx": "4.23.13",
     "typescript": "5.5.4"
   }
 }

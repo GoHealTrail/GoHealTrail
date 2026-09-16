@@ -42,6 +42,38 @@ export function deriveReadinessStatus(
   return 'ready'
 }
 
+export type OfflinePackageFreshness = 'fresh' | 'stale' | 'expired'
+
+export interface OfflinePackageMetadata {
+  manifestVersion: string
+  downloadedAt: string
+  maxAgeDays: number
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// Policy thresholds, not measurements: a package reads 'stale' past half its
+// max age and 'expired' past the full max age. Safety data goes stale fast,
+// so the default window is deliberately short.
+export const OFFLINE_PACKAGE_STALE_RATIO = 0.5
+
+export const DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS = 7
+
+export function offlinePackageFreshness(
+  pkg: OfflinePackageMetadata,
+  now = new Date(),
+): OfflinePackageFreshness {
+  const downloadedAt = Date.parse(pkg.downloadedAt)
+  if (Number.isNaN(downloadedAt)) return 'expired'
+  if (!Number.isFinite(pkg.maxAgeDays) || pkg.maxAgeDays <= 0) return 'expired'
+
+  const ageDays = (now.getTime() - downloadedAt) / DAY_MS
+
+  if (ageDays > pkg.maxAgeDays) return 'expired'
+  if (ageDays > pkg.maxAgeDays * OFFLINE_PACKAGE_STALE_RATIO) return 'stale'
+  return 'fresh'
+}
+
 export interface TrailPermitInfo {
   required: boolean
   localFee?: number
@@ -87,6 +119,7 @@ export interface TripPlan {
   checklist: string[]
   readiness?: TrailReadiness
   offlineManifestVersion?: string
+  offlinePackage?: OfflinePackageMetadata
 }
 
 export interface CommunityTrailUpdate {

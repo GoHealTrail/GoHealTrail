@@ -4,7 +4,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import type { CommunityTrailUpdate, Trail, TripPlan, TrailReadiness, TrailPermitInfo, SafetySummary, WeatherRisk } from '@gohealt/shared-types'
+import { DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS, offlinePackageFreshness } from '@gohealt/shared-types'
+import type { CommunityTrailUpdate, OfflinePackageMetadata, Trail, TripPlan, TrailReadiness, TrailPermitInfo, SafetySummary, WeatherRisk } from '@gohealt/shared-types'
 
 
 
@@ -33,6 +34,30 @@ type RegionReference = {
 
 
 const SESSION_STORAGE_KEY = 'gohealttrail:session-token'
+
+const OFFLINE_PACKAGE_STORAGE_KEY = 'gohealttrail:offline-package'
+
+function readOfflinePackage(): OfflinePackageMetadata | null {
+  if (typeof window === 'undefined') return null
+
+  const raw = window.localStorage.getItem(OFFLINE_PACKAGE_STORAGE_KEY)
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (
+      typeof parsed?.manifestVersion !== 'string' ||
+      typeof parsed?.downloadedAt !== 'string' ||
+      typeof parsed?.maxAgeDays !== 'number'
+    ) {
+      return null
+    }
+
+    return parsed as OfflinePackageMetadata
+  } catch {
+    return null
+  }
+}
 
 
 
@@ -1275,6 +1300,8 @@ export default function Home() {
 
   const [sessionState, setSessionState] = useState<SessionState>(() => readSessionState())
 
+  const [offlinePackage, setOfflinePackage] = useState<OfflinePackageMetadata | null>(() => readOfflinePackage())
+
 
 
   useEffect(() => {
@@ -1330,6 +1357,7 @@ export default function Home() {
     checklist: defaultChecklist,
     readiness: buildTrailReadiness({ ...selectedTrail, weather: weatherForTrail(selectedTrail.id) }),
     offlineManifestVersion,
+    offlinePackage: offlinePackage ?? undefined,
 
   }
 
@@ -1373,13 +1401,31 @@ export default function Home() {
 
   function downloadOffline() {
 
-    const payload = {
+    const metadata: OfflinePackageMetadata = {
 
       manifestVersion: offlineManifestVersion,
 
-      trails: visibleTrails,
-
       downloadedAt: new Date().toISOString(),
+
+      maxAgeDays: DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS,
+
+    }
+
+    setOfflinePackage(metadata)
+
+    if (typeof window !== 'undefined') {
+
+      window.localStorage.setItem(OFFLINE_PACKAGE_STORAGE_KEY, JSON.stringify(metadata))
+
+    }
+
+
+
+    const payload = {
+
+      ...metadata,
+
+      trails: visibleTrails,
 
     }
 
@@ -1444,6 +1490,9 @@ export default function Home() {
         <p>
 
           Active alerts: {demoAlerts.length} · Offline manifest: {offlineManifestVersion}
+          {offlinePackage
+            ? ` · Offline package: ${offlinePackageFreshness(offlinePackage)}`
+            : ' · Offline package: not downloaded'}
 
         </p>
 
