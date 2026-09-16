@@ -8,6 +8,7 @@ import {
   moderateCommunityTrailUpdate,
   submitCommunityTrailUpdate,
 } from './index.js'
+import { DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS, offlinePackageFreshness } from '@gohealt/shared-types'
 import type { Trail } from '@gohealt/shared-types'
 
 test('mobile app exposes the core trail workflow sections', () => {
@@ -23,6 +24,17 @@ test('builds a one-day plan with readiness and offline manifest metadata', () =>
   assert.ok(plan.checklist.length >= 3)
   assert.equal(plan.offlineManifestVersion, '2026-09-15-mobile-readiness-v1')
   assert.equal(plan.readiness?.status, 'ready')
+})
+
+test('stamps a fresh offline package on the generated plan', () => {
+  const plan = buildPlan('Weekend plan', 'user-1', 't-002')
+  const pkg = plan.offlinePackage
+
+  assert.ok(pkg)
+  assert.equal(pkg?.manifestVersion, plan.offlineManifestVersion)
+  assert.equal(pkg?.maxAgeDays, DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS)
+  assert.ok(!Number.isNaN(Date.parse(pkg?.downloadedAt ?? '')))
+  assert.equal(offlinePackageFreshness(pkg!), 'fresh')
 })
 
 test('marks trails without water as needing preparation', () => {

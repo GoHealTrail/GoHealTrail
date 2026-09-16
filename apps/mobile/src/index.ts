@@ -1,4 +1,4 @@
-import { deriveReadinessStatus } from '@gohealt/shared-types'
+import { DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS, deriveReadinessStatus } from '@gohealt/shared-types'
 import type { Trail, TripPlan, CommunityTrailUpdate, TrailReadiness, WeatherRisk } from '@gohealt/shared-types'
 
 type RegionReference = {
@@ -217,6 +217,11 @@ export function buildPlan(title: string, userId: string, selectedTrailId: string
     checklist: [...starterChecklist],
     readiness,
     offlineManifestVersion,
+    offlinePackage: {
+      manifestVersion: offlineManifestVersion,
+      downloadedAt: new Date().toISOString(),
+      maxAgeDays: DEFAULT_OFFLINE_PACKAGE_MAX_AGE_DAYS,
+    },
   }
 }
 
