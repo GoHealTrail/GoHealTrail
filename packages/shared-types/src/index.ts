@@ -10,6 +10,37 @@ export interface User {
 export type TrailDifficulty = 'easy' | 'moderate' | 'hard'
 export type SafetyLevel = 'normal' | 'advisory' | 'danger' | 'closed'
 export type SafetySource = 'official' | 'ranger' | 'community' | 'system'
+export type WeatherRisk = 'normal' | 'advisory' | 'danger'
+
+export interface WeatherSummary {
+  risk: WeatherRisk
+  reasons: string[]
+  observedAt: string
+  expiresAt?: string
+}
+
+export function isWeatherAlertActive(weather: WeatherSummary, now = new Date()): boolean {
+  return !weather.expiresAt || new Date(weather.expiresAt).getTime() > now.getTime()
+}
+
+export function weatherRiskToSafetyLevel(risk: WeatherRisk): SafetyLevel {
+  return risk
+}
+
+export function deriveReadinessStatus(
+  weather: WeatherSummary | undefined,
+  safety: SafetySummary | undefined,
+  missingCount: number,
+): TrailReadiness['status'] {
+  const weatherActive = weather ? isWeatherAlertActive(weather) : false
+  const safetyLevel = safety?.level ?? 'normal'
+  const weatherDanger = weatherActive && weather?.risk === 'danger'
+  const safetyDanger = safetyLevel === 'danger' || safetyLevel === 'closed'
+
+  if (weatherDanger || safetyDanger) return 'blocked'
+  if (missingCount > 0 || (weatherActive && weather?.risk === 'advisory') || safetyLevel === 'advisory') return 'warning'
+  return 'ready'
+}
 
 export interface TrailPermitInfo {
   required: boolean
@@ -43,6 +74,7 @@ export interface Trail {
   hasWater?: boolean
   permit?: TrailPermitInfo
   safety?: SafetySummary
+  weather?: WeatherSummary
 }
 
 export interface TripPlan {

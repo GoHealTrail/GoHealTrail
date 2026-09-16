@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { Trail } from './index.js'
 
-test('supports structured permit and safety metadata on trails', () => {
+test('shared trail contract accepts safety and permit metadata', () => {
   const trail: Trail = {
     id: 't-001',
     name: 'Test trail',
