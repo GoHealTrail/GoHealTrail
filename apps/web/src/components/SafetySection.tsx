@@ -84,6 +84,7 @@ export function SafetySection() {
               <button
                 type="button"
                 onClick={() => setSosOpen(true)}
+                aria-label="Trigger emergency SOS"
                 className="relative grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-coral-500 to-coral-400 text-forest-950 shadow-2xl shadow-coral-500/40 transition-transform hover:scale-105 active:scale-95"
               >
                 <Siren className="h-10 w-10" strokeWidth={2.5} />
