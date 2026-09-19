@@ -11,8 +11,12 @@
     "test": "node --import tsx --test src/**/*.test.ts"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^13.4.0",
+    "lucide-react": "^1.47.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
@@ -22,6 +26,7 @@
     "@next/eslint-plugin-next": "16.3.5",
     "@rushstack/eslint-patch": "^1.16.1",
     "@swc/helpers": "0.5.23",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "22.9.0",
     "@types/react": "18.3.5",
     "@types/react-dom": "18.3.0",
@@ -35,6 +40,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "next": "^16.3.5",
+    "tailwindcss": "^4.3.3",
     "tsx": "4.23.13",
     "typescript": "5.5.4"
   }
