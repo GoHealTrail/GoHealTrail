@@ -67,6 +67,12 @@ export function CommunityFeed({ session }: CommunityFeedProps) {
 
   useEffect(() => {
     let cancelled = false
+    // Playwright-driven UI verification injects this flag; the app otherwise
+    // always tries the live API and silently falls back to seed data.
+    if (typeof window !== 'undefined' && (window as unknown as { __GHT_SKIP_API__?: boolean }).__GHT_SKIP_API__) {
+      setLoading(false)
+      return
+    }
     async function loadCommunityUpdates() {
       try {
         const response = await fetch(`${API_BASE}/community-updates`, { cache: 'no-store' })

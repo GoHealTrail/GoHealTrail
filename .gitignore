@@ -34,3 +34,6 @@ pnpm-debug.log*
 
 # OS files
 Thumbs.db
+
+# UI verification screenshots
+apps/web/screenshot-*.png
