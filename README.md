@@ -1,11 +1,12 @@
 # GoHealTrail — landing site
 
-Standalone Next.js (App Router) site. Independent of the old `apps/`, `packages/` and `supabase/` folders — it has its own `package.json` and is **not** part of the root npm workspaces.
+Standalone Next.js (App Router) site for GoHealTrail — trail discovery, permit & guide checker and monetisation for Peninsular Malaysia.
 
-## Run it (Windows, from this `site` folder)
+## Run it (Windows)
 
 ```powershell
-cd C:\Users\fahru\OneDrive\Documents\GoHealTrail\site
+git clone https://github.com/GoHealTrail/GoHealTrail.git
+cd GoHealTrail
 npm install
 npm run dev        # http://localhost:3000
 npm run build      # production build
